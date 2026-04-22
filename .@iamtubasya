@@ -1,0 +1,281 @@
+<?php
+
+error_reporting(0);
+date_default_timezone_set("Asia/Jakarta");
+
+/* ================= WARNA ================= */
+$hitam="\033[0;30m"; $abu2="\033[1;30m";               $putih="\033[0;37m"; $putih2="\033[1;37m";$merah="\033[0;31m"; $merah2="\033[1;31m";             $hijau="\033[0;32m"; $hijau2="\033[1;32m";$kuning="\033[0;33m"; $kuning2="\033[1;33m";           $biru="\033[0;34m"; $biru2="\033[1;34m";$ungu="\033[0;35m"; $purple2="\033[1;35m";             $lblue="\033[0;36m"; $lblue2="\033[1;36m";                                                       $putih1="\033[7;37m";$merah1="\033[7;31m";                                  $hijau1="\033[7;32m";$kuning1="\033[7;33m";$biru1="\033[7;34m";                                   $ungu1="\033[7;35m";$lblue1="\033[7;36m";
+/* ================= FILE ================= */
+$proxyFile  = "proxyon.txt";
+$walletFile = "wallet.txt";
+
+$proxyQueue = [];
+$proxyIndex = 0;
+$wallets    = [];
+$walletProxyMap = [];
+
+/* ================= JAM ================= */
+function now(){
+    return "[" . date("H:i:s") . "]";
+}
+
+
+function convertjam($detik) {
+    $jam = floor($detik / 3600); 
+    $detik %= 3600;
+    $menit = floor($detik / 60);
+    $detik %= 60;
+
+    return sprintf("%02dH %02dM %02dS", $jam, $menit, $detik);
+}
+
+
+
+/* ================= LOAD PROXY ================= */
+function loadProxies(){
+    global $proxyFile, $proxyQueue;
+
+    // jika file tidak ada -> mode tanpa proxy
+    if(!file_exists($proxyFile)){
+        $proxyQueue = [];
+        return;
+    }
+
+    $lines = file($proxyFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    $proxyQueue = array_values(array_filter(array_map('trim', $lines)));
+
+    if(empty($proxyQueue)){
+        $proxyQueue = [];
+        return;
+    }
+}
+
+/* ================= LOAD WALLET ================= */
+
+function loadWallets(){
+    global $walletFile, $wallets, $file;
+
+    if(!file_exists($walletFile)){
+        die("File wallet.txt tidak ditemukan!\n");
+    }
+
+    $lines = file($walletFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    $wallets = array_values(array_filter(array_map('trim', $lines)));
+
+    if(empty($wallets)){
+menu();
+    }
+}
+
+/* ================= NEXT PROXY ================= */
+function nextProxy(){
+    global $proxyQueue, $proxyIndex;
+
+    if(empty($proxyQueue)){
+        return null;
+    }
+
+    $proxy = $proxyQueue[$proxyIndex];
+    $proxyIndex++;
+
+    if($proxyIndex >= count($proxyQueue)){
+        $proxyIndex = 0;
+    }
+
+    return $proxy;
+}
+
+/* ================= WALLET FIXED PROXY ================= */
+function getWalletProxy($wallet){
+    global $walletProxyMap;
+
+    if(isset($walletProxyMap[$wallet])){
+        return $walletProxyMap[$wallet];
+    }
+
+    $proxy = nextProxy();
+    $walletProxyMap[$wallet] = $proxy;
+
+    return $proxy;
+}
+
+
+
+
+/* ================= SET PROXY ================= */
+function setProxy($ch, $proxy){
+    if(!$proxy) return;
+
+    $parts = parse_url($proxy);
+    if(!$parts) return;
+
+    $scheme = strtolower($parts['scheme'] ?? 'http');
+    $host   = $parts['host'] ?? '';
+    $port   = $parts['port'] ?? '';
+
+    curl_setopt($ch, CURLOPT_PROXY, $host . ':' . $port);
+
+    switch($scheme){
+        case 'socks5':
+            curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
+            break;
+        case 'socks4':
+            curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS4);
+            break;
+        default:
+            curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
+            break;
+    }
+}
+
+/* ================= POST ================= */
+function post($url, $header, $data, $proxy){
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($ch, CURLOPT_COOKIEJAR, "cookie.txt");
+    curl_setopt($ch, CURLOPT_COOKIEFILE, "cookie.txt");
+
+    setProxy($ch, $proxy);
+
+    $result = curl_exec($ch);
+    return $result;
+}
+
+/* ================= GET ================= */
+function get($url, $header, $proxy){
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($ch, CURLOPT_COOKIEJAR, "cookie.txt");
+    curl_setopt($ch, CURLOPT_COOKIEFILE, "cookie.txt");
+
+    setProxy($ch, $proxy);
+
+    $result = curl_exec($ch);
+    return $result;
+}
+
+/* ================= START ================= */
+
+
+function start($wallet){
+    global $putih2, $merah2, $hijau2, $kuning2, $lblue2;
+
+$proxy = nextProxy();
+$proxy = getWalletProxy($wallet);
+$wal=sensor($wallet);
+echo $lblue2 . "\r" . now() . "          \nProxy : " . ($proxy ?: "No Proxy :)") . "\n";
+echo $putih2 . "Address : $wal\n";
+
+
+$ua=array(
+"Host: pouthobmqvfbnnyyamkt.supabase.co",
+"content-length: ",
+"user-agent: Mozilla/5.0 (Linux; Android 13; M2101K6G Build/TD1A.220804.031; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/146.0.7680.177 Mobile Safari/537.36; BitKeep Android/9.40.0",
+"content-type: application/json",
+"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvdXRob2JtcXZmYm5ueXlhbWt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxOTU4ODcsImV4cCI6MjA5MDc3MTg4N30.MyqPl2IKQjDw3Tjf8m9T-0-NbD0GcGjRmSjWFLPyC30",
+"origin: https://axiomoracle.xyz",
+"x-requested-with: com.bitkeep.wallet",
+"referer: https://axiomoracle.xyz/",
+"accept-language: id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
+
+);
+    $urlGet = "https://pouthobmqvfbnnyyamkt.supabase.co/functions/v1/node-api/activity?wallet=$wallet";
+//    get($urlGet, $ua, $proxy);
+
+$lt=substr($wallet, 0, 5);
+if (file_exists(".lt".$lt)) {
+
+}else{
+    $urlPost = "https://pouthobmqvfbnnyyamkt.supabase.co/rest/v1/rpc/get_node_streak_status";
+    $data = '{"_wallet":"'.$wallet.'"}';
+    $post = post($urlPost, $ua, $data, $proxy);
+
+    $json = json_decode($post);
+$lifetime=$json->lifetime_uptime;
+$lt=substr($wallet, 0, 5);
+file_put_contents(".lt".$lt,$lifetime);
+}
+$lt=substr($wallet, 0, 5);
+$lifetime=file_get_contents(".lt".$lt);
+
+    $urlPost = "https://pouthobmqvfbnnyyamkt.supabase.co/functions/v1/node-api/heartbeat";
+    $data = '{"wallet_address":"'.$wallet.'"}';
+    $post = post($urlPost, $ua, $data, $proxy);
+
+    $json = json_decode($post);
+
+$nowtime=$json->lifetime_uptime;
+
+$lt=substr($wallet, 0, 5);
+file_put_contents(".lt".$lt,$nowtime);
+
+$add=$nowtime-$lifetime;
+
+$totaltime=convertjam($nowtime);
+
+    if(isset($json->success) && $json->success == true){
+
+            if($add>0){
+            echo $hijau2 . " • [+] Uptime : $add Sec Added! \n";
+               }
+            echo $kuning2 . " • [+] Lifetime : $totaltime \n";
+    } else {
+        echo $merah2 . " • Network Error!\n";
+    }
+
+    echo $putih2 . "====================================\n";
+}
+
+
+
+/* ================= LOAD ================= */
+/* ================= LOOP ================= */
+
+function iamtubasya(){
+$hitam="\033[0;30m"; $abu2="\033[1;30m";               $putih="\033[0;37m"; $putih2="\033[1;37m";$merah="\033[0;31m"; $merah2="\033[1;31m";             $hijau="\033[0;32m"; $hijau2="\033[1;32m";$kuning="\033[0;33m"; $kuning2="\033[1;33m";           $biru="\033[0;34m"; $biru2="\033[1;34m";$ungu="\033[0;35m"; $purple2="\033[1;35m";             $lblue="\033[0;36m"; $lblue2="\033[1;36m";                                                       $putih1="\033[7;37m";$merah1="\033[7;31m";                                  $hijau1="\033[7;32m";$kuning1="\033[7;33m";$biru1="\033[7;34m";                                   $ungu1="\033[7;35m";$lblue1="\033[7;36m";
+system("clear");
+echo banner()."\n";;
+
+echo "$putih2 Countdown sesuikan jumlah wallet";
+echo $putih2."\n $kuning1 Countdown time $hitam $putih2 > ";
+$remaining=trim(fgets(STDIN));
+
+loadProxies();
+loadWallets();
+$hitam="\033[0;30m"; $abu2="\033[1;30m";               $putih="\033[0;37m"; $putih2="\033[1;37m";$merah="\033[0;31m"; $merah2="\033[1;31m";             $hijau="\033[0;32m"; $hijau2="\033[1;32m";$kuning="\033[0;33m"; $kuning2="\033[1;33m";           $biru="\033[0;34m"; $biru2="\033[1;34m";$ungu="\033[0;35m"; $purple2="\033[1;35m";             $lblue="\033[0;36m"; $lblue2="\033[1;36m";                                                       $putih1="\033[7;37m";$merah1="\033[7;31m";                                  $hijau1="\033[7;32m";$kuning1="\033[7;33m";$biru1="\033[7;34m";                                   $ungu1="\033[7;35m";$lblue1="\033[7;36m";
+system("clear");
+echo banner()."\n";;
+    echo $putih2.$lblue1." • Start Node • $hitam   \n\n";
+while(true){
+
+    $loopStart = microtime(true);
+
+    global $wallets;
+    $totalWallet = count($wallets);
+
+    foreach($wallets as $wallet){
+        start($wallet);
+    }
+
+    if($totalWallet == 0){
+       return menu();
+    }
+
+        for($i = (int)ceil($remaining); $i > 0; $i--){
+           $colors = ["\033[5;37m","\033[5;31m","\033[5;32m","\033[5;33m","\033[5;34m","\033[5;35m","\033[5;36m",];              
+           $colran = $colors[array_rand($colors)];
+           echo "\r" .$putih2." • Countdown ".$colran.$i.$putih2." Detik \033[0m";
+           sleep(1);
+        }
+    }
+}
